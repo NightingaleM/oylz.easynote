@@ -1,28 +1,53 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
+    <v-app>
+      <Snackbar></Snackbar>
+      <router-view></router-view>
+    </v-app>
   </div>
 </template>
 
+<script>
+import { mapMutations, mapGetters, mapState, mapActions } from "vuex";
+import CSSDoodle from "css-doodle";
+import Snackbar from "./components/snackbar";
+export default {
+  components: {
+    Snackbar
+  },
+  name: "app",
+  data() {
+    return {};
+  },
+  methods: {
+    ...mapActions(["getTags"])
+  },
+  mounted() {},
+  created() {
+    this.getTags();
+  }
+};
+</script>
+
 <style lang="less">
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
-#nav {
-  padding: 30px;
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-    &.router-link-exact-active {
-      color: #42b983;
+#search-page {
+  // 搜索页面的手风琴头部高度
+  .search-expansiton-box {
+    .expansion-header {
+      .v-expansion-panel__header {
+        padding: 0 24px;
+        min-height: 35px;
+      }
     }
   }
 }
