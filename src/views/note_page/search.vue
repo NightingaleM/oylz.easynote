@@ -1,5 +1,6 @@
 <template>
   <div id="search-page">
+    <span class="is-self-btn" @click="isSelf = !isSelf">看自己的！{{isSelf?'': '还有别人的！'}}</span>
     <v-expansion-panel class="search-expansiton-box">
       <v-expansion-panel-content class="expansion-header">
         <div slot="header">搜索内容：{{originKeyword.replace(/ +/g,',')}}</div>
@@ -51,25 +52,24 @@
       </v-expansion-panel-content>
     </v-expansion-panel>
     <div id="note-content-box">
-      <v-list two-line>
+      <v-list two-line v-if="noteOption.length">
         <template v-for="(item) in noteOption">
-          <v-list-tile :key="item.title" class="note-li">
+          <v-list-tile :key="item.title" class="note-li" @click="noteDetail(item.id)">
             <!-- <v-list-tile-avatar>
               <img :src="item.avatar">
             </v-list-tile-avatar>-->
             <v-list-tile-content style="padding:0">
-              <!-- <v-list-tile-title v-html="item.note"></v-list-tile-title> -->
               <v-list-tile-sub-title>
                 <pre class="note-pre">{{item.note}}</pre>
               </v-list-tile-sub-title>
               <v-list-tile-sub-title>
                 <span class="note-tag" v-for="(tag,tid) in item.tags" :key="tid">{{tag.tag}},</span>
               </v-list-tile-sub-title>
-              <!-- <v-list-tile-sub-title v-html="item.subtitle"></v-list-tile-sub-title> -->
             </v-list-tile-content>
           </v-list-tile>
         </template>
       </v-list>
+      <span v-else>啥都没有呐</span>
     </div>
   </div>
 </template>
@@ -96,7 +96,12 @@ export default {
       const index = this.tags.indexOf(item);
       if (index >= 0) this.tags.splice(index, 1);
     },
-    async getSearchNote() {
+    noteDetail(id) {
+      this.$router.push(`/details/${id}`);
+    },
+    async getSearchNote(init) {
+      console.log(init ? 1 : 222);
+      this.page = init ? 1 : this.page;
       let tags = this.tags.map(item => item.id).toString();
       let res = await this.$http.getSearchNote({
         isSelf: this.isSelf,
@@ -105,6 +110,7 @@ export default {
         keywords: this.keywords,
         tags: tags
       });
+      this.noteOption = init ? [] : this.noteOption;
       this.noteOption.push(...res.data.result.data);
     }
   },
@@ -125,7 +131,7 @@ export default {
         this.updateOriginKeyword(value);
         clearTimeout(this.timeOut);
         this.timeOut = setTimeout(() => {
-          this.getSearchNote();
+          this.getSearchNote(true);
         }, 600);
       }
     },
@@ -141,10 +147,16 @@ export default {
         }
         clearTimeout(this.timeOut);
         this.timeOut = setTimeout(() => {
-          this.getSearchNote();
+          this.getSearchNote(true);
         }, 600);
       },
       deep: true
+    },
+    isSelf() {
+      clearTimeout(this.timeOut);
+      this.timeOut = setTimeout(() => {
+        this.getSearchNote(true);
+      }, 400);
     }
   }
 };
@@ -153,6 +165,17 @@ export default {
 <style lang="less" scoped>
 #search-page {
   margin-top: 75px;
+  .is-self-btn {
+    position: fixed;
+    top: 110px;
+    right: 5px;
+    z-index: 499;
+    font-size: 12px;
+    border: 1px solid #b3b3b3;
+    color: #939393;
+    border-radius: 3px;
+    padding: 0 3px;
+  }
   .search-expansiton-box {
     padding: 0 20px;
     background-color: #fff;

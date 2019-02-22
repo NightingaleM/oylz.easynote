@@ -43,8 +43,10 @@ export default new Vuex.Store({
     },
     async login({ commit, dispatch, state }, { email, password }) {
       let res = await API.login({ email, password })
-
     },
+    async logout({ commit, dispatch, state }) {
+      let res = await API.logout()
+    }
     // async getSearchNote({ commit, dispatch, state }, { value }) {
     //   let keywords = value.split(" ");
     //   let res = await API.getSearchNote(keywords)

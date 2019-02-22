@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-
+import API from './api/api'
 Vue.use(Router)
 
 export default new Router({
@@ -32,7 +32,7 @@ export default new Router({
         component: () => import('./views/note_page/search.vue')
       },
       {
-        path: 'details',
+        path: 'details/:id',
         name: 'details',
         component: () => import('./views/note_page/details.vue')
       },
@@ -41,7 +41,15 @@ export default new Router({
         name: 'writer',
         component: () => import('./views/note_page/writer.vue')
       },
-    ]
+    ],
+    beforeEnter: async (to, from, next) => {
+      try {
+        await API.checkUserStatus()
+        next()
+      } catch (e) {
+        console.log(e)
+      }
+    }
   },
   ]
 })

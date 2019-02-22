@@ -1,6 +1,12 @@
 import axios from "./instance"
 
 const API = {
+  checkUserStatus() {
+    return axios({
+      method: 'post',
+      url: '/check'
+    })
+  },
   // 注册
   register({ email, username, password, sex }) {
     return axios({
@@ -19,6 +25,13 @@ const API = {
       data: {
         email, password
       }
+    })
+  },
+  // 登出
+  logout() {
+    return axios({
+      method: 'post',
+      url: '/logout'
     })
   },
   // 获取tags
@@ -45,6 +58,13 @@ const API = {
       method: 'get',
       url: '/easynote',
       params: { isSelf, page, cout, keywords, tags }
+    })
+  },
+  // 获取note详情
+  getNoteDetail({ id }) {
+    return axios({
+      method: 'get',
+      url: `/easynote/${id}`
     })
   }
 }
