@@ -42,13 +42,14 @@ const API = {
     })
   },
   // 创建新的note
-  createNewNote({ note, tags }) {
+  createNewNote({ note, tags, isPublic }) {
     return axios({
       method: 'post',
       url: '/easynote',
       data: {
         note,
-        tags
+        tags,
+        isPublic,
       }
     })
   },
