@@ -1,13 +1,13 @@
 <template>
   <div id="search-page">
-    <span class="is-self-btn" @click="isSelf = !isSelf">看自己的！{{isSelf?'': '还有别人的！'}}</span>
-    <v-expansion-panel class="search-expansiton-box">
+    <span class="is-self-btn" @click="updateCheckSelf">看自己的！{{selectInfo.checkSelf?'': '还有别人的！'}}</span>
+    <v-expansion-panel v-model="panel" class="search-expansiton-box">
       <v-expansion-panel-content class="expansion-header">
-        <div slot="header">搜索内容：{{originKeyword.replace(/ +/g,',')}}</div>
+        <div slot="header">搜索内容：{{selectInfo.originKeyword.replace(/ +/g,',')}}</div>
         <v-card>
           <v-card-text>
             <v-text-field
-              v-model.trim="originKeyword"
+              v-model.trim="selectInfo.originKeyword"
               :counter="40"
               label="search your note"
               required
@@ -16,11 +16,13 @@
         </v-card>
       </v-expansion-panel-content>
       <v-expansion-panel-content class="expansion-header">
-        <div slot="header">标签：{{tagsName.lenght ? '' : tagsName}}</div>
+        <div
+          slot="header"
+        >标签：{{selectInfo.tags.lenght ? '' : selectInfo.tags.map(i=>{return i.tag})}}</div>
         <v-card>
           <v-card-text>
             <v-autocomplete
-              v-model="tags"
+              v-model="selectInfo.tags"
               :items="tagOptions"
               label="tags"
               item-text="tag"
@@ -51,9 +53,9 @@
         </v-card>
       </v-expansion-panel-content>
     </v-expansion-panel>
-    <div id="note-content-box">
-      <v-list two-line v-if="noteOption.length">
-        <template v-for="(item) in noteOption">
+    <div id="note-content-box" v-scroll:#note-content-box="onScroll">
+      <v-list two-line v-show="noteList.length" id="scroll-box">
+        <template v-for="(item) in noteList">
           <v-list-tile :key="item.title" class="note-li" @click="noteDetail(item.id)">
             <!-- <v-list-tile-avatar>
               <img :src="item.avatar">
@@ -69,7 +71,7 @@
           </v-list-tile>
         </template>
       </v-list>
-      <span v-else>啥都没有呐</span>
+      <span v-if="!noteList.length">啥都没有呐</span>
     </div>
   </div>
 </template>
@@ -81,82 +83,74 @@ export default {
   data() {
     return {
       // originKeyword: ""
-      tags: [],
-      page: 1,
-      cout: 20,
-      isSelf: true,
       timeOut: null,
-      noteOption: []
+      addPageLock: false,
+      panel: null, // 控制扩展面板的展开、关闭
+      panelTimeOut: null // 到事件自动闭合所有扩展面板
     };
   },
   methods: {
-    ...mapMutations(["updateOriginKeyword", "awakeSnackbar"]),
-    ...mapActions(["getTags"]),
-    removeTag(item) {
-      const index = this.tags.indexOf(item);
-      if (index >= 0) this.tags.splice(index, 1);
-    },
+    ...mapMutations([
+      "updateOriginKeyword",
+      "awakeSnackbar",
+      "updateTags",
+      "updateCheckSelf",
+      "removeTag",
+      "addPage"
+    ]),
+    ...mapActions(["getSearchNote"]),
     noteDetail(id) {
       this.$router.push(`/details/${id}`);
     },
-    async getSearchNote(init) {
-      console.log(init ? 1 : 222);
-      this.page = init ? 1 : this.page;
-      let tags = this.tags.map(item => item.id).toString();
-      let res = await this.$http.getSearchNote({
-        isSelf: this.isSelf,
-        page: this.page,
-        cout: this.cout,
-        keywords: this.keywords,
-        tags: tags
-      });
-      this.noteOption = init ? [] : this.noteOption;
-      this.noteOption.push(...res.data.result.data);
+    onScroll(e) {
+      if (this.addPageLock) return;
+      let domOffsetHeight = document.querySelector("#scroll-box").offsetHeight;
+      let scrollTop = e.target.scrollTop;
+      let windowHeight = window.innerHeight;
+      if (scrollTop + windowHeight > domOffsetHeight + 34) {
+        this.addPageLock = true;
+        this.addPage(this.page + 1);
+      }
     }
   },
-  created() {
-    this.getSearchNote();
-  },
+  created() {},
+  mounted() {},
   computed: {
-    tagsName() {
-      return this.tags.map(item => {
-        return item.tag;
-      });
-    },
-    originKeyword: {
+    selectInfo: {
       get() {
-        return this.$store.state.originKeyword;
-      },
-      set(value) {
-        this.updateOriginKeyword(value);
-        clearTimeout(this.timeOut);
-        this.timeOut = setTimeout(() => {
-          this.getSearchNote(true);
-        }, 600);
+        return this.$store.state.selectInfo;
       }
     },
-    ...mapState(["userinfo", "tagOptions"]),
+    ...mapState(["userinfo", "tagOptions", "noteList", "page"]),
     ...mapGetters(["keywords"])
   },
   watch: {
-    tags: {
-      handler() {
-        if (this.tags.length > 5) {
-          this.tags = this.tags.splice(0, 5);
+    panel: {
+      handler(status) {
+        if (status === null) return;
+        clearTimeout(this.panelTimeOut);
+        this.panelTimeOut = setTimeout(() => {
+          this.panel = null;
+        }, 4000);
+      }
+    },
+    selectInfo: {
+      handler(selectInfo) {
+        if (selectInfo.tags.length > 5) {
+          selectInfo.tags = selectInfo.tags.splice(0, 5);
           this.awakeSnackbar({ text: "标签数不可超过5！", timeout: 2000 });
         }
+        clearTimeout(this.panelTimeOut);
+        this.panelTimeOut = setTimeout(() => {
+          this.panel = null;
+        }, 4000);
         clearTimeout(this.timeOut);
-        this.timeOut = setTimeout(() => {
-          this.getSearchNote(true);
+        this.timeOut = setTimeout(async () => {
+          let res = await this.getSearchNote({ init: true });
+          this.addPageLock = false;
         }, 600);
       },
       deep: true
-    },
-    isSelf() {
-      clearTimeout(this.timeOut);
-      this.timeOut = setTimeout(() => {
-        this.getSearchNote(true);
-      }, 400);
     }
   }
 };
@@ -205,6 +199,10 @@ export default {
       font-size: 12px;
       color: rgba(0, 0, 0, 0.5);
     }
+  }
+  #note-content-box {
+    height: calc(100vh - 35px - 71px);
+    overflow-y: scroll;
   }
 }
 </style>

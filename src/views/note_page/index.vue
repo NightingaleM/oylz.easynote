@@ -20,7 +20,7 @@ export default {
     };
   },
   methods: {
-    ...mapActions(["logout"]),
+    ...mapActions(["logout", "getSearchNote"]),
     ...mapMutations(["awakeSnackbar", "closeSnackbar"]),
 
     logoutEasynote() {
@@ -41,6 +41,9 @@ export default {
       const fromName = from.name;
       this.transitionName = toName === "search" ? "slide-right" : "slide-left";
     }
+  },
+  created() {
+    this.getSearchNote({ init: true });
   }
 };
 </script>

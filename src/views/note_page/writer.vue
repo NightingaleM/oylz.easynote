@@ -50,26 +50,32 @@ import { mapMutations, mapGetters, mapState, mapActions } from "vuex";
 export default {
   data: () => ({
     content: "",
-    tags: []
+    tags: [],
+    createKey: false
   }),
   methods: {
     ...mapMutations(["awakeSnackbar"]),
+    ...mapActions(["getSearchNote"]),
     removeTag(item) {
       const index = this.tags.indexOf(item.id);
       if (index >= 0) this.tags.splice(index, 1);
     },
     async createNewNote() {
+      if (this.createKey) return;
       try {
+        this.createKey = true;
         let res = await this.$http.createNewNote({
           note: this.content,
           tags: this.tags
         });
         this.awakeSnackbar({ text: "发表成功！" });
+        this.getSearchNote({ init: true });
         setTimeout(() => {
           this.$router.push("/");
         }, 1000);
       } catch (e) {
         this.awakeSnackbar({ text: e.response.data.message, type: "error" });
+        this.createKey = false;
       }
     }
   },
